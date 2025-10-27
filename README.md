@@ -138,14 +138,34 @@ sudo nano /boot/config.txt
 
 ## 📖 使用方法
 
+### 仮想環境のアクティベート
+スクリプトを実行する前に、必ず仮想環境をアクティベートしてください：
+
+```bash
+# 仮想環境をアクティベート
+source ./realsense_env/bin/activate
+
+# アクティベートされたことを確認（プロンプトに (realsense_env) が表示される）
+(realsense_env) murakami@raspberrypi:~/realsense_tutorial $
+```
+
 ### 基本的な深度情報の取得
 ```bash
+# 仮想環境をアクティベート後
 python3 debug.py
 ```
 
 ### カラー + 深度画像の表示
 ```bash
+# 仮想環境をアクティベート後
 python3 realsense_test.py
+```
+
+### 仮想環境の非アクティベート
+作業が終わったら、仮想環境を非アクティベートできます：
+
+```bash
+deactivate
 ```
 
 ## 📁 ファイル説明
