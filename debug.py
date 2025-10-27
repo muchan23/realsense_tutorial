@@ -6,16 +6,16 @@ import time
 pipeline = rs.pipeline()
 config = rs.config()
 
-# ラズパイ向けの設定（解像度とフレームレートを下げる）
-# ラズパイの処理能力を考慮して、より軽い設定に
-config.enable_stream(rs.stream.depth, 320, 240, rs.format.z16, 15)  # 解像度とフレームレートを下げる
+# ラズパイ向けの設定（利用可能な設定を使用）
+# デバイスでサポートされている設定を使用
+config.enable_stream(rs.stream.depth, 1280, 720, rs.format.z16, 30)  # 利用可能な設定
 
 # ストリーミング開始
 pipeline.start(config)
 
 try:
     print("ラズパイ用深度情報取得開始...")
-    print("解像度: 320x240, フレームレート: 15fps")
+    print("解像度: 1280x720, フレームレート: 30fps")
     print("(Ctrl+Cで停止)")
     
     frame_count = 0
