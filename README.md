@@ -26,33 +26,114 @@
 
 ## 🚀 セットアップ
 
-### 1. システムの更新
+> **参考**: このセットアップ手順は [Raspberry Pi 4 and Intel RealSense D435](https://github.com/datasith/Ai_Demos_RPi/wiki/Raspberry-Pi-4-and-Intel-RealSense-D435) を参考にしています。
+
+### 1. システムの更新と依存関係のインストール
 ```bash
-sudo apt update && sudo apt upgrade -y
-sudo reboot
+sudo apt-get update && sudo apt-get dist-upgrade
+sudo apt-get install automake libtool vim cmake libusb-1.0-0-dev libx11-dev xorg-dev libglu1-mesa-dev python3-pip python3-dev python3-numpy
 ```
 
-### 2. 必要なライブラリのインストール
+### 2. ファイルシステムの拡張
 ```bash
-# 基本パッケージ
-sudo apt install python3-pip python3-dev python3-numpy python3-opencv
-
-# RealSense関連パッケージ
-sudo apt install librealsense2-dkms librealsense2-utils librealsense2-dev
+sudo raspi-config
+# Advanced Options → Expand filesystem → Yes → Reboot
 ```
 
-### 3. Pythonライブラリのインストール
+### 3. スワップサイズの増加
 ```bash
-pip3 install pyrealsense2 numpy opencv-python
+# /etc/dphys-swapfile を編集
+sudo vi /etc/dphys-swapfile
+# CONF_SWAPSIZE=2048 に変更
+
+# 変更を適用
+sudo /etc/init.d/dphys-swapfile restart
+swapon -s
 ```
 
-### 4. GPU メモリの設定 (オプション)
+### 4. RealSense udevルールの設定
+```bash
+cd ~
+git clone https://github.com/IntelRealSense/librealsense.git
+cd librealsense
+sudo cp config/99-realsense-libusb.rules /etc/udev/rules.d/
+
+# udevルールを適用
+sudo su
+udevadm control --reload-rules && udevadm trigger
+exit
+```
+
+### 5. 環境変数の設定
+```bash
+# ~/.bashrc に追加
+echo 'export LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH' >> ~/.bashrc
+echo 'export PYTHONPATH=$PYTHONPATH:/usr/local/lib' >> ~/.bashrc
+source ~/.bashrc
+```
+
+### 6. protobufのインストール
+```bash
+cd ~
+git clone --depth=1 -b v3.10.0 https://github.com/google/protobuf.git
+cd protobuf
+./autogen.sh
+./configure
+make -j1
+sudo make install
+cd python
+export LD_LIBRARY_PATH=../src/.libs
+python3 setup.py build --cpp_implementation 
+python3 setup.py test --cpp_implementation
+sudo python3 setup.py install --cpp_implementation
+export PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=cpp
+export PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION_VERSION=3
+sudo ldconfig
+```
+
+### 7. Intel TBBライブラリのインストール
+```bash
+cd ~
+wget https://github.com/PINTO0309/TBBonARMv7/raw/master/libtbb-dev_2018U2_armhf.deb
+sudo dpkg -i ~/libtbb-dev_2018U2_armhf.deb
+sudo ldconfig
+rm libtbb-dev_2018U2_armhf.deb
+```
+
+### 8. librealsenseのビルドとインストール
+```bash
+cd ~/librealsense
+mkdir build && cd build
+cmake .. -DBUILD_EXAMPLES=true -DCMAKE_BUILD_TYPE=Release -DFORCE_LIBUVC=true
+make -j1
+sudo make install
+```
+
+### 9. pyrealsense2 Pythonバインディングのインストール
+```bash
+cd ~/librealsense/build
+cmake .. -DBUILD_PYTHON_BINDINGS=bool:true -DPYTHON_EXECUTABLE=$(which python3)
+make -j1
+sudo make install
+```
+
+### 10. OpenGLの設定
+```bash
+# OpenGLのインストール
+sudo apt-get install python-opengl
+sudo -H pip3 install pyopengl
+sudo -H pip3 install pyopengl_accelerate==3.1.3rc1
+
+# OpenGLドライバーの有効化
+sudo raspi-config
+# "7. Advanced Options" → "A8 GL Driver" → "G2 GL (Fake KMS)"
+```
+
+### 11. GPU メモリの設定 (オプション)
 ```bash
 # /boot/config.txt に追加
 sudo nano /boot/config.txt
-
-# 以下の行を追加
-gpu_mem=128
+# gpu_mem=128 を追加
 ```
 
 ## 📖 使用方法
